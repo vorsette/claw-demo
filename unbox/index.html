@@ -21,7 +21,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 #skip{flex:none;margin:0 0 16px;min-width:min(240px,62%);padding:11px 24px;border-radius:30px;background:#fff;border:1px solid #dcd7ef;color:#6b6690;font-weight:800;letter-spacing:2px;font-size:13px}
 .grid{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:var(--g);width:calc(var(--cols)*var(--s) + (var(--cols) - 1)*var(--g));max-width:100%}
 /* mode A: prize photos flying in the background, then gathering into the package */
-.sw{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden}.sw i{position:absolute;left:0;top:0;width:var(--z);height:var(--z);border-radius:22%;background:#fff center/cover no-repeat;box-shadow:0 0 0 2px #fff,0 8px 20px #2a1f5c33;display:grid;place-items:center;font-style:normal;font-size:calc(var(--z)*.5);will-change:transform,opacity;opacity:0}
+.sw{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden}.sw i.hero{box-shadow:0 0 0 3px #ff5a3c,0 0 26px #ff5a3caa,0 10px 24px #2a1f5c44}.sw i.hero:after{content:'SP';position:absolute;left:-6%;top:-6%;padding:0 .5em;border-radius:1em;background:#ff5a3c;color:#fff;font-size:11px;font-weight:800;line-height:1.6;box-shadow:0 0 0 2px #fff}
+.sw i{position:absolute;left:0;top:0;width:var(--z);height:var(--z);border-radius:22%;background:#fff center/cover no-repeat;box-shadow:0 0 0 2px #fff,0 8px 20px #2a1f5c33;display:grid;place-items:center;font-style:normal;font-size:calc(var(--z)*.5);will-change:transform,opacity;opacity:0}
 #play .grid{position:relative;z-index:1}
 /* mode B: pick-your-own wall */
 #hud{flex:none;min-height:46px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 10px;font-size:13px;font-weight:700;color:#6b6690;padding:0 12px 10px;text-align:center}#hud b{color:#1f1b3a}
@@ -91,7 +92,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
  <div id="mode"></div>
  <div id="bar"></div>
  <div id="userModal"><div id="stage" class="fx-target"><div id="ttl"></div><div id="play"></div><div id="hud"></div><button id="skip">跳过</button></div></div>
- <div id="ctl"><div class="row"><label>数量</label><div class="seg" id="cnt"></div></div><div class="row"><label>预览</label><div class="seg" id="out"></div></div><div class="row"><button id="go">开盒</button><button id="mute">🔊</button></div></div>
+ <div id="ctl"><div class="row"><label>数量</label><div class="seg" id="cnt"></div></div><div class="row"><label>预览</label><div class="seg" id="out"></div></div><div class="row" id="flyrow"><label>飞行</label><div class="seg" id="fly"></div></div><div class="row"><button id="go">开盒</button><button id="mute">🔊</button></div></div>
 </div>
 <script>
 window.UI = { mute: false };
@@ -198,7 +199,7 @@ const TYPES = [
   { n: '③扭蛋', w: '<i class="cp-t"></i><i class="cp-b"><b>?</b></i>', pre: 1100 },
   { n: '④卡牌', w: '<i class="cd-b"><b>?</b></i>', pre: 600 },
   { n: '⑤神秘格', w: '<i class="pd-base"></i><i class="pd-veil"><b>?</b></i><i class="pd-scan"></i>', pre: 800 }];
-let MODE = 'a', V = 0, CNT = 1, OUT = 'rand', RID = 0, SKIP = false;
+let MODE = 'a', FLY = 'orbit', V = 0, CNT = 1, OUT = 'rand', RID = 0, SKIP = false;
 const stage = $('#stage'), play = $('#play');
 const W = ms => new Promise((res, rej) => { const id = RID; setTimeout(() => id === RID ? res() : rej('x'), SKIP ? 0 : ms); });
 const tile = (it, extra = '') => `<div class="tl" style="--tc:${TIER[it.t].c}"><div class="tl-b"><span>${it.e}</span>${it.img ? `<img src="${it.img}" alt="" onerror="this.remove()">` : ''}</div><b class="tl-t">${TIER[it.t].n}</b>${extra}</div>`;
@@ -207,21 +208,32 @@ const cheer = (el, it, big) => { if (SKIP) return; const p = FX.pos(el), k = rk(
   if (k >= 3) FX.rain({ n: k === 4 ? 110 : 60, dur: 1800, colors: [TIER[it.t].c, ...pastel] }); k >= 2 ? SFX.win(it.t) : SFX.pop(); };
 const tween = (ms, fn) => new Promise((res, rej) => { const id = RID, t0 = performance.now(); const f = now => { if (id !== RID) return rej('x'); const t = SKIP ? 1 : Math.max(0, Math.min(1, (now - t0) / ms)); fn(t); t < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); });
 /* mode A: the box's prize photos fly around behind the package, speed up, then gather into it */
-function swarm(ms) {
+function swarm(ms, spWin) {
   if (SKIP) return Promise.resolve(); const lay = document.createElement('div'); lay.className = 'sw'; stage.insertBefore(lay, play);
-  const R = stage.getBoundingClientRect(), pr = play.getBoundingClientRect(), cx = pr.left - R.left + pr.width / 2, cy = pr.top - R.top + pr.height * .46, rx = Math.min(R.width * .5, 560), ry = Math.min(pr.height * .44, 320), small = R.width < 480;
-  const src = POOL.slice().sort(() => Math.random() - .5), ps = Array.from({ length: Math.max(14, Math.min(20, src.length * 2)) }, (_, k) => { const it = src[k % src.length], z = (small ? 44 : 62) + rk(it.t) * (small ? 6 : 9) + Math.random() * 10, el = document.createElement('i'); el.style.setProperty('--z', z + 'px'); if (it.img) el.style.backgroundImage = `url("${it.img}")`; else el.textContent = it.e; lay.appendChild(el);
-    return { el, z, a: Math.random() * 6.28, w: (1.1 + Math.random() * 1.1) * (k % 2 ? 1 : -1), r: .5 + Math.random() * .55, ph: Math.random() * 6.28 }; });
-  return tween(ms, t => { const fin = Math.max(0, (t - .8) / .2), k = 1 - fin * fin, sec = t * ms / 1000; ps.forEach(p => { const a = p.a + p.w * sec * (1 + 1.6 * t), d = Math.sin(a) * .5 + .5, x = cx + Math.cos(a) * rx * p.r * k, y = cy + Math.sin(a) * ry * p.r * k + Math.sin(a * .5 + p.ph) * 18 * k;
-    p.el.style.transform = `translate3d(${(x - p.z / 2).toFixed(1)}px,${(y - p.z / 2).toFixed(1)}px,0) scale(${((.68 + .5 * d) * (1 - fin * .8)).toFixed(3)}) rotate(${(Math.sin(a + p.ph) * 10).toFixed(1)}deg)`; p.el.style.opacity = (Math.min(1, t * 7) * (.55 + .45 * d) * (1 - fin * fin)).toFixed(2); p.el.style.zIndex = d > .5 ? 2 : 1; }); })
-    .then(() => lay.remove(), e => { lay.remove(); throw e; });
+  const R = stage.getBoundingClientRect(), pr = play.getBoundingClientRect(), gr = play.firstChild.getBoundingClientRect(), cx = pr.left - R.left + pr.width / 2, cy = pr.top - R.top + pr.height * .46, rx = Math.min(R.width * .5, 560), ry = Math.min(pr.height * .44, 320), small = R.width < 480, top = gr.top - R.top;
+  const mk = (it, z, hero) => { const el = document.createElement('i'); el.style.setProperty('--z', z + 'px'); if (hero) el.className = 'hero'; if (it.img) el.style.backgroundImage = `url("${it.img}")`; else el.textContent = it.e; lay.appendChild(el); return el; };
+  const put = (el, z, x, y, sc, rot, op, zi) => { el.style.transform = `translate3d(${(x - z / 2).toFixed(1)}px,${(y - z / 2).toFixed(1)}px,0) scale(${sc.toFixed(3)}) rotate(${rot.toFixed(1)}deg)`; el.style.opacity = Math.max(0, Math.min(1, op)).toFixed(2); el.style.zIndex = zi; };
+  const src = POOL.slice().sort(() => Math.random() - .5), ps = Array.from({ length: Math.max(14, Math.min(20, src.length * 2)) }, (_, k) => { const it = src[k % src.length], z = (small ? 44 : 62) + rk(it.t) * (small ? 6 : 9) + Math.random() * 10; return { el: mk(it, z), z, a: Math.random() * 6.28, w: (1.1 + Math.random() * 1.1) * (k % 2 ? 1 : -1), r: .5 + Math.random() * .55, ph: Math.random() * 6.28 }; });
+  /* heroes = top-prize photos. 'pass': slow-motion fly-bys right past the package. 'edge': one dives at the opening, hesitates, then is flung away (it only goes in when the top prize was really won) */
+  const hz = small ? 84 : 120, sps = by('sp').slice().sort((a, b) => b.v - a.v), heroes = FLY === 'pass' ? [0, 1, 2].map(k => ({ el: mk(sps[k % sps.length], hz, true), k })) : FLY === 'edge' ? [{ el: mk(sps[0], hz, true), a0: Math.random() * 6.28, dir: Math.random() < .5 ? -1 : 1 }] : [];
+  let hit = false;
+  return tween(ms, t => { const fin = Math.max(0, (t - .8) / .2), k = 1 - fin * fin, sec = t * ms / 1000;
+    ps.forEach(p => { const a = p.a + p.w * sec * (1 + 1.6 * t), d = Math.sin(a) * .5 + .5; put(p.el, p.z, cx + Math.cos(a) * rx * p.r * k, cy + Math.sin(a) * ry * p.r * k + Math.sin(a * .5 + p.ph) * 18 * k, (.68 + .5 * d) * (1 - fin * .8), Math.sin(a + p.ph) * 10, Math.min(1, t * 7) * (.55 + .45 * d) * (1 - fin * fin), d > .5 ? 2 : 1); });
+    heroes.forEach(h => {
+      if (FLY === 'pass') { const u = (t - .08 - h.k * .22) / .34; if (u <= 0 || u >= 1) return put(h.el, hz, -200, 0, 1, 0, 0, 3); const q = .5 + 4 * Math.pow(u - .5, 3), dir = h.k % 2 ? -1 : 1, x = dir > 0 ? -hz + (R.width + 2 * hz) * q : R.width + hz - (R.width + 2 * hz) * q; put(h.el, hz, x, top - hz * .1 - Math.sin(u * Math.PI) * 26 + h.k * 14, .8 + .5 * Math.sin(u * Math.PI), (u - .5) * 16 * dir, Math.sin(u * Math.PI) * 1.6, 3); }
+      else { const bx = cx, byy = top + hz * .05;
+        if (t < .45) { const a = h.a0 + sec * 2.2; put(h.el, hz, cx + Math.cos(a) * rx * .8, cy + Math.sin(a) * ry * .75, .75 + .3 * (Math.sin(a) * .5 + .5), Math.sin(a) * 8, t * 8, 3); h.x = cx + Math.cos(a) * rx * .8; h.y = cy + Math.sin(a) * ry * .75; }
+        else if (t < .7) { const u = (t - .45) / .25, e = 1 - Math.pow(1 - u, 3); put(h.el, hz, h.x + (bx - h.x) * e, h.y + (byy - h.y) * e - Math.sin(u * Math.PI) * 40, 1.05 - .25 * e, (1 - e) * 20, 1, 3); }
+        else if (t < .84) { const u = (t - .7) / .14; if (!hit) { hit = true; play.querySelectorAll('.u').forEach(x => x.classList.add('pre')); SFX.pop(); } put(h.el, hz, bx + Math.sin(u * 26) * 5, byy + u * hz * .22, .8 - u * .12, Math.sin(u * 26) * 4, 1, 3); }
+        else { const u = (t - .84) / .16; if (spWin) put(h.el, hz, bx, byy + hz * .22 + u * hz * .3, .68 * (1 - u), 0, 1 - u, 3); else put(h.el, hz, bx + h.dir * R.width * .75 * u, byy + hz * .22 - Math.sin(u * Math.PI * .6) * 150, .68 + u * .5, h.dir * u * 300, 1 - u * u, 3); } } }); })
+    .then(() => { lay.remove(); play.querySelectorAll('.u.pre').forEach(x => x.classList.remove('pre')); }, e => { lay.remove(); throw e; });
 }
 async function openUnit(el, it, big) { const T = TYPES[V], pre = big ? T.pre : 240; el.style.setProperty('--pt', pre + 'ms'); el.classList.add('pre'); if (big) SFX.charge(); await W(pre); el.classList.remove('pre'); el.classList.add('open'); SFX.whoosh(); }
 async function run(list) {
   const n = list.length, Wd = play.clientWidth, Hd = play.clientHeight, big = n === 1, cols = big ? 1 : n === 3 ? 3 : n === 5 ? (Wd >= 640 ? 5 : 3) : 5, rows = Math.ceil(n / cols), g = Wd < 420 ? 10 : 18;
   const s = Math.floor(big ? Math.min(Wd * .58, (Hd - 90) / 1.16, 280) : Math.max(52, Math.min((Wd - 28 - (cols - 1) * g) / cols, (Hd - 24 - (rows - 1) * g) / rows / 1.16, 170)));
   play.innerHTML = `<div class="grid" style="--s:${s}px;--g:${g}px;--cols:${cols}">${list.map((it, k) => unit(it, k, big)).join('')}</div>`; const us = [...play.querySelectorAll('.u')];
-  await W(450 + n * 55); SFX.whoosh(); await swarm(big ? 2600 : 2200); if (!SKIP) { const p = FX.pos(play.firstChild); FX.burst(p.x, p.y, { n: 22, power: 5, colors: ['#6c4dff', '#38d6ff', '#ffffff'] }); }
+  await W(450 + n * 55); SFX.whoosh(); await swarm(FLY === 'edge' ? 3400 : FLY === 'pass' ? 3200 : big ? 2600 : 2200, list.some(i => i.t === 'sp')); if (!SKIP) { const p = FX.pos(play.firstChild); FX.burst(p.x, p.y, { n: 22, power: 5, colors: ['#6c4dff', '#38d6ff', '#ffffff'] }); }
   if (big) { await openUnit(us[0], list[0], true); await W(1050); us[0].classList.add('done'); cheer(us[0], list[0], true); await W(1700); }
   else { for (let k = 0; k < n; k++) { openUnit(us[k], list[k], false).then(() => W(520)).then(() => { us[k].classList.add('done'); cheer(us[k], list[k], false); }).catch(() => { }); await W(n >= 10 ? 300 : 420); } await W(1700); }
   us.forEach(u => u.classList.add('open', 'done'));
@@ -256,7 +268,7 @@ function result(list) {
 }
 async function go() {
   RID++; SKIP = false; stage.querySelectorAll('.pay').forEach(x => x.remove()); play.innerHTML = '';
-  stage.querySelectorAll('.sw').forEach(x => x.remove()); const B = MODE === 'b', hud = $('#hud'); hud.innerHTML = ''; hud.onclick = null; hud.style.display = B ? '' : 'none'; $('#skip').style.display = B ? 'none' : '';
+  stage.querySelectorAll('.sw').forEach(x => x.remove()); const B = MODE === 'b', hud = $('#hud'); hud.innerHTML = ''; hud.onclick = null; hud.style.display = B ? '' : 'none'; $('#skip').style.display = B ? 'none' : ''; $('#flyrow').style.display = B ? 'none' : '';
   $('#ttl').innerHTML = `${B ? '自选' : '开'} ${CNT} 个 · <b>iPhone Duo Fold Rush</b>`; $('#skip').style.visibility = 'visible'; $('#go').textContent = B ? '重新开始' : '开盒';
   if (B) { try { const got = await board(CNT); hud.innerHTML = ''; result(got); } catch (e) { if (e !== 'x') { console.error(e); window.__err = String(e.stack || e); } } return; }
   const best = OUT === 'rand' ? roll() : roll(OUT), list = [...Array.from({ length: CNT - 1 }, () => roll()), best].sort(() => Math.random() - .5);
@@ -266,6 +278,7 @@ const seg = (el, opts, get, set) => { el.innerHTML = opts.map(([v, n]) => `<butt
 seg($('#mode'), [['a', '模式 A · 自动开盒'], ['b', '模式 B · 自选盲盒墙']], () => MODE, v => { MODE = v; go(); });
 seg($('#bar'), TYPES.map((t, i) => [i, t.n]), () => V, v => { V = +v; go(); });
 seg($('#cnt'), [[1, '1 个'], [3, '3 个'], [5, '5 个'], [10, '10 个']], () => CNT, v => { CNT = +v; go(); });
+seg($('#fly'), [['orbit', '环绕汇聚'], ['pass', '大奖掠过'], ['edge', '擦边弹开']], () => FLY, v => { FLY = v; go(); });
 seg($('#out'), [['rand', '随机'], ['d', '普通款'], ['a', 'A 赏'], ['sp', 'SP 款']], () => OUT, v => OUT = v);
 $('#go').onclick = go; $('#skip').onclick = () => { SKIP = true; }; $('#mute').onclick = e => { UI.mute = !UI.mute; e.target.textContent = UI.mute ? '🔇' : '🔊'; };
 $('#ttl').innerHTML = '2 种模式 × 5 种款式'; $('#skip').style.visibility = 'hidden'; $('#hud').style.display = 'none';
