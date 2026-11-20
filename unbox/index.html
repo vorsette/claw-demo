@@ -4,6 +4,8 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}html,body{height:100%;background:#f4f2fb;color:#1f1b3a;font-family:system-ui,-apple-system,"PingFang SC","Noto Sans SC",sans-serif;overflow:hidden}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 #userPane{position:relative;height:100%;height:100dvh;display:flex;flex-direction:column;overflow:hidden;--font2:system-ui;container-type:inline-size}
+#mode{flex:none;display:grid;grid-template-columns:repeat(2,minmax(0,300px));justify-content:center;gap:5px;padding:8px 8px 0;background:#fff}
+#mode button{min-width:0;padding:9px 2px;border-radius:10px;background:#f4f2fb;border:1px solid #e7e3f5;font-size:13px;font-weight:800;white-space:nowrap;color:#6b6690}#mode button.on{background:#6c4dff;border-color:#6c4dff;color:#fff}
 #bar{flex:none;display:grid;grid-template-columns:repeat(5,minmax(0,150px));justify-content:center;gap:5px;padding:8px 8px 6px;background:#fff;border-bottom:1px solid #e7e3f5}
 #bar button,.seg button{min-width:0;padding:8px 2px;overflow:hidden;text-overflow:ellipsis;border-radius:10px;background:#f4f2fb;border:1px solid #e7e3f5;font-size:12.5px;font-weight:700;white-space:nowrap;color:#6b6690}
 #bar button.on,.seg button.on{background:#1f1b3a;border-color:#1f1b3a;color:#fff}
@@ -18,6 +20,17 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 #play{position:relative;flex:1 1 0;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
 #skip{flex:none;margin:0 0 16px;min-width:min(240px,62%);padding:11px 24px;border-radius:30px;background:#fff;border:1px solid #dcd7ef;color:#6b6690;font-weight:800;letter-spacing:2px;font-size:13px}
 .grid{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:var(--g);width:calc(var(--cols)*var(--s) + (var(--cols) - 1)*var(--g));max-width:100%}
+/* mode A: prize photos flying in the background, then gathering into the package */
+.sw{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden}.sw i{position:absolute;left:0;top:0;width:var(--z);height:var(--z);border-radius:22%;background:#fff center/cover no-repeat;box-shadow:0 0 0 2px #fff,0 8px 20px #2a1f5c33;display:grid;place-items:center;font-style:normal;font-size:calc(var(--z)*.5);will-change:transform,opacity;opacity:0}
+#play .grid{position:relative;z-index:1}
+/* mode B: pick-your-own wall */
+#hud{flex:none;min-height:46px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 10px;font-size:13px;font-weight:700;color:#6b6690;padding:0 12px 10px;text-align:center}#hud b{color:#1f1b3a}
+#hud button{padding:9px 16px;border-radius:20px;background:#6c4dff;color:#fff;font-weight:800;font-size:13px}#hud button.ghost{background:#fff;border:1px solid #dcd7ef;color:#6b6690}
+.board .u{height:var(--s);cursor:pointer;-webkit-user-select:none;user-select:none;transition:opacity .4s,transform .4s}.board .u-pz{left:5%;top:5%;width:90%}.board .cd-b,.board .pd-veil{left:5%;top:5%;width:90%}
+.board .u:not(.open):not(.pre) .u-w{animation:bob 2.6s ease-in-out infinite;animation-delay:calc(var(--i)*-190ms)}@keyframes bob{50%{transform:translateY(-4%)}}
+.board .u:not(.open):active{transform:scale(.93)}.board.lock .u{pointer-events:none}
+.board .u.mine:after{content:'✓';position:absolute;right:0;top:0;z-index:5;width:20px;height:20px;border-radius:50%;background:#1f1b3a;color:#fff;font-size:11px;font-weight:900;display:grid;place-items:center;box-shadow:0 0 0 2px #fff}
+.board .u.other{opacity:.45;transform:scale(.88)}.board .u.other.hi{opacity:1;transform:none}.board .u.other.hi .tl-b{box-shadow:0 0 0 2px var(--tc),0 0 0 6px color-mix(in srgb,var(--tc) 28%,transparent)}
 /* prize tile */
 .tl{position:relative;width:100%;height:100%}
 .tl-b{position:relative;width:100%;height:100%;border-radius:16%;background:#fff;border:1px solid #e4e0f3;overflow:hidden;display:grid;place-items:center;font-size:calc(var(--s)*.34);transition:box-shadow .4s}
@@ -32,7 +45,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .u-w{position:absolute;inset:0;z-index:2;pointer-events:none}.u-w i{position:absolute;display:block;font-style:normal}.u-w b{position:relative;color:#fff;font-weight:900;font-size:calc(var(--s)*.26);text-shadow:0 2px 0 #0002}
 .u-gl{position:absolute;left:50%;top:48%;width:12%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#fff,color-mix(in srgb,var(--tc) 70%,#fff) 45%,transparent 70%);transform:translate(-50%,-50%) scale(0);opacity:0;z-index:0}
 .u.open .u-gl{animation:glow calc(.8s*var(--k)) ease-out}@keyframes glow{0%{transform:translate(-50%,-50%) scale(0);opacity:.95}100%{transform:translate(-50%,-50%) scale(13);opacity:0}}
-.u-nm{position:absolute;left:-10%;right:-10%;top:100%;text-align:center;font-size:13px;font-weight:700;line-height:1.3;opacity:0;transform:translateY(8px);transition:.35s}.u-nm em{display:block;font-style:normal;font-weight:800;font-size:17px;color:var(--tc)}.u.big.done .u-nm{opacity:1;transform:none}
+.u:not(.big) .u-nm{display:none}.u-nm{pointer-events:none;position:absolute;left:-10%;right:-10%;top:100%;text-align:center;font-size:13px;font-weight:700;line-height:1.3;opacity:0;transform:translateY(8px);transition:.35s}.u-nm em{display:block;font-style:normal;font-weight:800;font-size:17px;color:var(--tc)}.u.big.done .u-nm{opacity:1;transform:none}
 @keyframes wig{25%{transform:rotate(-3deg) translateX(-2%)}75%{transform:rotate(3deg) translateX(2%)}}
 /* ① box */
 .t0{--c1:#8f7bff;--c2:#5b3fe6;--c3:#b3a5ff}
@@ -75,8 +88,9 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .pay-g figcaption{font-size:11.5px;font-weight:700;text-align:center;line-height:1.25}.pay-g figcaption em{display:block;font-style:normal;font-weight:800;color:#6c4dff}.pay-g .tl>i{position:absolute;right:8%;bottom:6%;z-index:2;font-style:normal;font-weight:800;font-size:12px;color:#fff;background:#1f1b3acc;border-radius:1em;padding:0 .5em}
 </style></head><body>
 <div id="userPane">
+ <div id="mode"></div>
  <div id="bar"></div>
- <div id="userModal"><div id="stage" class="fx-target"><div id="ttl"></div><div id="play"></div><button id="skip">跳过</button></div></div>
+ <div id="userModal"><div id="stage" class="fx-target"><div id="ttl"></div><div id="play"></div><div id="hud"></div><button id="skip">跳过</button></div></div>
  <div id="ctl"><div class="row"><label>数量</label><div class="seg" id="cnt"></div></div><div class="row"><label>预览</label><div class="seg" id="out"></div></div><div class="row"><button id="go">开盒</button><button id="mute">🔊</button></div></div>
 </div>
 <script>
@@ -179,27 +193,62 @@ const $ = s => document.querySelector(s), pick = a => a[Math.random() * a.length
 const rollTier = () => { const r = Math.random() * 100; return r < .15 ? 'sp' : r < 1.05 ? 'a' : r < 1.95 ? 'b' : r < 2.95 ? 'c' : 'd'; }, roll = t => pick(by(t || rollTier()));
 /* five unboxing types. No reels, no near-miss, no fake hints: the wrapper comes off and the real prize is shown. */
 const TYPES = [
-  { n: '①开箱', w: '<i class="bx-body"><b>?</b></i><i class="bx-lid"></i>', pre: 1100 },
-  { n: '②撕袋', w: '<i class="bg-body"><b>?</b></i><i class="bg-top"></i><i class="bg-tear"></i>', pre: 900 },
+  { n: '①盲盒', w: '<i class="bx-body"><b>?</b></i><i class="bx-lid"></i>', pre: 1100 },
+  { n: '②福袋', w: '<i class="bg-body"><b>?</b></i><i class="bg-top"></i><i class="bg-tear"></i>', pre: 900 },
   { n: '③扭蛋', w: '<i class="cp-t"></i><i class="cp-b"><b>?</b></i>', pre: 1100 },
-  { n: '④翻牌', w: '<i class="cd-b"><b>?</b></i>', pre: 600 },
-  { n: '⑤揭幕', w: '<i class="pd-base"></i><i class="pd-veil"><b>?</b></i><i class="pd-scan"></i>', pre: 800 }];
-let V = 0, CNT = 1, OUT = 'rand', RID = 0, SKIP = false;
+  { n: '④卡牌', w: '<i class="cd-b"><b>?</b></i>', pre: 600 },
+  { n: '⑤神秘格', w: '<i class="pd-base"></i><i class="pd-veil"><b>?</b></i><i class="pd-scan"></i>', pre: 800 }];
+let MODE = 'a', V = 0, CNT = 1, OUT = 'rand', RID = 0, SKIP = false;
 const stage = $('#stage'), play = $('#play');
 const W = ms => new Promise((res, rej) => { const id = RID; setTimeout(() => id === RID ? res() : rej('x'), SKIP ? 0 : ms); });
 const tile = (it, extra = '') => `<div class="tl" style="--tc:${TIER[it.t].c}"><div class="tl-b"><span>${it.e}</span>${it.img ? `<img src="${it.img}" alt="" onerror="this.remove()">` : ''}</div><b class="tl-t">${TIER[it.t].n}</b>${extra}</div>`;
 const unit = (it, k, big) => `<div class="u t${V}${big ? ' big' : ''}" style="--tc:${TIER[it.t].c};--i:${k}"><div class="u-in"><i class="u-gl"></i><div class="u-pz">${tile(it)}</div><div class="u-w">${TYPES[V].w}</div></div><div class="u-nm">${it.n}<em>${fmt(it.v)}</em></div></div>`;
 const cheer = (el, it, big) => { if (SKIP) return; const p = FX.pos(el), k = rk(it.t), pastel = ['#6c4dff', '#38d6ff', '#ffd166', '#ff8fb0', '#ffffff']; FX.burst(p.x, p.y, { n: (big ? [26, 34, 60, 100, 150] : [8, 10, 26, 50, 80])[k], power: (big ? 7 : 4.5) + k, colors: [TIER[it.t].c, ...pastel] });
   if (k >= 3) FX.rain({ n: k === 4 ? 110 : 60, dur: 1800, colors: [TIER[it.t].c, ...pastel] }); k >= 2 ? SFX.win(it.t) : SFX.pop(); };
+const tween = (ms, fn) => new Promise((res, rej) => { const id = RID, t0 = performance.now(); const f = now => { if (id !== RID) return rej('x'); const t = SKIP ? 1 : Math.max(0, Math.min(1, (now - t0) / ms)); fn(t); t < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); });
+/* mode A: the box's prize photos fly around behind the package, speed up, then gather into it */
+function swarm(ms) {
+  if (SKIP) return Promise.resolve(); const lay = document.createElement('div'); lay.className = 'sw'; stage.insertBefore(lay, play);
+  const R = stage.getBoundingClientRect(), pr = play.getBoundingClientRect(), cx = pr.left - R.left + pr.width / 2, cy = pr.top - R.top + pr.height * .46, rx = Math.min(R.width * .5, 560), ry = Math.min(pr.height * .44, 320), small = R.width < 480;
+  const src = POOL.slice().sort(() => Math.random() - .5), ps = Array.from({ length: Math.max(14, Math.min(20, src.length * 2)) }, (_, k) => { const it = src[k % src.length], z = (small ? 44 : 62) + rk(it.t) * (small ? 6 : 9) + Math.random() * 10, el = document.createElement('i'); el.style.setProperty('--z', z + 'px'); if (it.img) el.style.backgroundImage = `url("${it.img}")`; else el.textContent = it.e; lay.appendChild(el);
+    return { el, z, a: Math.random() * 6.28, w: (1.1 + Math.random() * 1.1) * (k % 2 ? 1 : -1), r: .5 + Math.random() * .55, ph: Math.random() * 6.28 }; });
+  return tween(ms, t => { const fin = Math.max(0, (t - .8) / .2), k = 1 - fin * fin, sec = t * ms / 1000; ps.forEach(p => { const a = p.a + p.w * sec * (1 + 1.6 * t), d = Math.sin(a) * .5 + .5, x = cx + Math.cos(a) * rx * p.r * k, y = cy + Math.sin(a) * ry * p.r * k + Math.sin(a * .5 + p.ph) * 18 * k;
+    p.el.style.transform = `translate3d(${(x - p.z / 2).toFixed(1)}px,${(y - p.z / 2).toFixed(1)}px,0) scale(${((.68 + .5 * d) * (1 - fin * .8)).toFixed(3)}) rotate(${(Math.sin(a + p.ph) * 10).toFixed(1)}deg)`; p.el.style.opacity = (Math.min(1, t * 7) * (.55 + .45 * d) * (1 - fin * fin)).toFixed(2); p.el.style.zIndex = d > .5 ? 2 : 1; }); })
+    .then(() => lay.remove(), e => { lay.remove(); throw e; });
+}
 async function openUnit(el, it, big) { const T = TYPES[V], pre = big ? T.pre : 240; el.style.setProperty('--pt', pre + 'ms'); el.classList.add('pre'); if (big) SFX.charge(); await W(pre); el.classList.remove('pre'); el.classList.add('open'); SFX.whoosh(); }
 async function run(list) {
   const n = list.length, Wd = play.clientWidth, Hd = play.clientHeight, big = n === 1, cols = big ? 1 : n === 3 ? 3 : n === 5 ? (Wd >= 640 ? 5 : 3) : 5, rows = Math.ceil(n / cols), g = Wd < 420 ? 10 : 18;
   const s = Math.floor(big ? Math.min(Wd * .58, (Hd - 90) / 1.16, 280) : Math.max(52, Math.min((Wd - 28 - (cols - 1) * g) / cols, (Hd - 24 - (rows - 1) * g) / rows / 1.16, 170)));
   play.innerHTML = `<div class="grid" style="--s:${s}px;--g:${g}px;--cols:${cols}">${list.map((it, k) => unit(it, k, big)).join('')}</div>`; const us = [...play.querySelectorAll('.u')];
-  await W(500 + n * 55);
+  await W(450 + n * 55); SFX.whoosh(); await swarm(big ? 2600 : 2200); if (!SKIP) { const p = FX.pos(play.firstChild); FX.burst(p.x, p.y, { n: 22, power: 5, colors: ['#6c4dff', '#38d6ff', '#ffffff'] }); }
   if (big) { await openUnit(us[0], list[0], true); await W(1050); us[0].classList.add('done'); cheer(us[0], list[0], true); await W(1700); }
   else { for (let k = 0; k < n; k++) { openUnit(us[k], list[k], false).then(() => W(520)).then(() => { us[k].classList.add('done'); cheer(us[k], list[k], false); }).catch(() => { }); await W(n >= 10 ? 300 : 420); } await W(1700); }
   us.forEach(u => u.classList.add('open', 'done'));
+}
+/* mode B: the wall is generated BEFORE any pick — what sits under each cell is fixed, a tap only reveals it; afterwards every other cell is opened too */
+function board(K) {
+  const Wd = play.clientWidth, Hd = play.clientHeight, cols = Wd >= 640 ? 5 : 4, N = 20, rows = N / cols, g = Wd < 420 ? 8 : 14, s = Math.floor(Math.max(50, Math.min((Wd - 24 - (cols - 1) * g) / cols, (Hd - 16 - (rows - 1) * g) / rows, 150)));
+  const cells = [pick(by('sp')), pick(by('a')), pick(by('a')), pick(by('b')), pick(by('b')), ...Array.from({ length: N - 5 }, () => pick(by(Math.random() < .3 ? 'c' : 'd')))].sort(() => Math.random() - .5);
+  play.innerHTML = `<div class="grid board" style="--s:${s}px;--g:${g}px;--cols:${cols}">${cells.map((it, k) => unit(it, k, false)).join('')}</div>`;
+  const bd = play.firstChild, us = [...bd.children], mine = [], hud = $('#hud'), id = RID; let busy = false;
+  const setCell = (k, it) => { cells[k] = it; us[k].style.setProperty('--tc', TIER[it.t].c); us[k].querySelector('.u-pz').innerHTML = tile(it); };
+  const swap = (k, ok) => { if (ok(cells[k])) return; const j = cells.findIndex((c, i) => i !== k && !mine.includes(i) && ok(c)); if (j >= 0) { const t = cells[k]; setCell(k, cells[j]); setCell(j, t); } };
+  return new Promise((res, rej) => {
+    const sum = () => mine.reduce((a, k) => a + cells[k].v, 0);
+    const upd = done => { hud.innerHTML = done ? `你的奖品 <b>${K}</b> 件 · 价值 <b>${fmt(sum())}</b> <button id="fin">查看结果</button>` : `请点选 <b>${K}</b> 个 · 已选 <b>${mine.length}</b> <button class="ghost" id="auto">帮我随机选</button>`; };
+    const tap = async k => { if (id !== RID || mine.length >= K || mine.includes(k)) return;
+      /* demo-only preview control: lets you see a chosen rarity on the last pick; a live system must never move prizes after a tap */
+      if (OUT !== 'rand') swap(k, mine.length === K - 1 ? c => c.t === OUT : c => rk(c.t) < 2);
+      mine.push(k); us[k].classList.add('mine'); upd(false); const last = mine.length === K; if (last) bd.classList.add('lock');
+      try { await openUnit(us[k], cells[k], false); await W(480); us[k].classList.add('done'); cheer(us[k], cells[k], false);
+        if (last) { await W(900); us.forEach((u, i) => { if (!mine.includes(i)) setTimeout(() => { if (id === RID) u.classList.add('open', 'done', 'other', ...(rk(cells[i].t) >= 3 ? ['hi'] : [])); }, i * 45); }); SFX.whoosh(); await W(N * 45 + 500); upd(true); }
+      } catch (e) { rej(e); } };
+    bd.onclick = e => { const u = e.target.closest('.u'); if (u) tap(us.indexOf(u)); };
+    hud.onclick = async e => { if (e.target.id === 'fin') return res(mine.map(k => cells[k])); if (e.target.id !== 'auto' || busy) return; busy = true;
+      try { while (mine.length < K && id === RID) { const free = us.map((u, i) => i).filter(i => !mine.includes(i)); tap(pick(free)); await W(360); } } catch (e) { } };
+    upd(false);
+  });
 }
 function result(list) {
   const g = new Map(); list.forEach(i => g.set(i, (g.get(i) || 0) + 1)); const rows = [...g].sort((a, b) => rk(b[0].t) - rk(a[0].t) || b[0].v - a[0].v), pw = Math.round(Math.max(76, Math.min(rows.length === 1 ? 190 : rows.length <= 3 ? 130 : 94, (play.clientWidth - 64) / Math.min(rows.length, 3))));
@@ -207,15 +256,18 @@ function result(list) {
 }
 async function go() {
   RID++; SKIP = false; stage.querySelectorAll('.pay').forEach(x => x.remove()); play.innerHTML = '';
-  $('#ttl').innerHTML = `开 ${CNT} 个 · <b>iPhone Duo Fold Rush</b>`; $('#skip').style.visibility = 'visible';
+  stage.querySelectorAll('.sw').forEach(x => x.remove()); const B = MODE === 'b', hud = $('#hud'); hud.innerHTML = ''; hud.onclick = null; hud.style.display = B ? '' : 'none'; $('#skip').style.display = B ? 'none' : '';
+  $('#ttl').innerHTML = `${B ? '自选' : '开'} ${CNT} 个 · <b>iPhone Duo Fold Rush</b>`; $('#skip').style.visibility = 'visible'; $('#go').textContent = B ? '重新开始' : '开盒';
+  if (B) { try { const got = await board(CNT); hud.innerHTML = ''; result(got); } catch (e) { if (e !== 'x') { console.error(e); window.__err = String(e.stack || e); } } return; }
   const best = OUT === 'rand' ? roll() : roll(OUT), list = [...Array.from({ length: CNT - 1 }, () => roll()), best].sort(() => Math.random() - .5);
   try { await run(list); $('#skip').style.visibility = 'hidden'; await W(200); result(list); } catch (e) { if (e !== 'x') { console.error(e); window.__err = String(e.stack || e); } }
 }
 const seg = (el, opts, get, set) => { el.innerHTML = opts.map(([v, n]) => `<button data-v="${v}">${n}</button>`).join(''); const up = () => [...el.children].forEach(b => b.classList.toggle('on', b.dataset.v == get())); el.onclick = e => { const b = e.target.closest('button'); if (!b) return; set(b.dataset.v); up(); }; up(); };
+seg($('#mode'), [['a', '模式 A · 自动开盒'], ['b', '模式 B · 自选盲盒墙']], () => MODE, v => { MODE = v; go(); });
 seg($('#bar'), TYPES.map((t, i) => [i, t.n]), () => V, v => { V = +v; go(); });
 seg($('#cnt'), [[1, '1 个'], [3, '3 个'], [5, '5 个'], [10, '10 个']], () => CNT, v => { CNT = +v; go(); });
 seg($('#out'), [['rand', '随机'], ['d', '普通款'], ['a', 'A 赏'], ['sp', 'SP 款']], () => OUT, v => OUT = v);
 $('#go').onclick = go; $('#skip').onclick = () => { SKIP = true; }; $('#mute').onclick = e => { UI.mute = !UI.mute; e.target.textContent = UI.mute ? '🔇' : '🔊'; };
-$('#ttl').innerHTML = '5 种开盒动画'; $('#skip').style.visibility = 'hidden';
-play.innerHTML = '<div style="text-align:center;font-weight:700;line-height:2;color:#8d88ad">上方切换 5 种开盒方式<br>再点「开盒」</div>';
+$('#ttl').innerHTML = '2 种模式 × 5 种款式'; $('#skip').style.visibility = 'hidden'; $('#hud').style.display = 'none';
+play.innerHTML = '<div style="text-align:center;font-weight:700;line-height:2;color:#8d88ad">先选模式，再选 5 种款式<br>然后点「开盒」</div>';
 </script></body></html>
